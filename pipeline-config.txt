@@ -1,4 +1,4 @@
-n AWS - with every new service we create, a service role would be created so that it can be used with this new service.
+In AWS - with every new service we create, a service role would be created so that it can be used with this new service.
 Each Service Role is associated with some Permissions - it gets some default permissions. We can also add permissions manually by attaching a policy to it. Remember, we can also create custom policy and Attach to a Service role.
 
 Steps to Create Terraform Pipeline in AWS.
