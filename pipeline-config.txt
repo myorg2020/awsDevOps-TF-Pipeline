@@ -1,0 +1,63 @@
+n AWS - with every new service we create, a service role would be created so that it can be used with this new service.
+Each Service Role is associated with some Permissions - it gets some default permissions. We can also add permissions manually by attaching a policy to it. Remember, we can also create custom policy and Attach to a Service role.
+
+Steps to Create Terraform Pipeline in AWS.
+1. Create Terraform Source Code Repository in CodeCommit - Refer, https://github.com/myorg2020/awsDevOps-TF-Pipeline/tree/main. Make Sure to create backend S3 bucket, Prior doing next steps.
+    In CodeCommit Repo, for backend.tf file make sure to change s3 bucket name same as the one created for backend.
+
+2. Then Create CodeBuild Project. Create a Build Project:
+      project name: terraform-build (any name)
+      Source provider: AWS CodeCommit
+      Repository: Select the repo name created in step1 as source code
+      Branch: main
+      OS: Amazon Linux
+      Image: amazonlinux2….x86_64…standrad:4.0
+      Role name: Give a role name like, code-build-project-terraform-build
+      Buildspec: Select, Insert build commands , click switch to Editor & add below commands. In this section we can add commands which we want to run.
+                          (This will install terraform in image which we have selected and runs all terraform commands)
+
+Once this build project is created, Navigate to the project build which is just created in step2.
+Build Projects -> click on your, build project just created -> Under Configuration, Service role click on arn URL -> Click on Add permissions, select Attach Policies and assign AdministratorAccess
+
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - sudo yum update -y
+      - sudo yum install -y unzip
+      - curl -O https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip
+      - unzip terraform_1.8.5_linux_amd64.zip
+      - sudo mv terraform /usr/local/bin
+      - terraform version
+      - terraform init
+      - terraform validate
+      - terraform fmt
+      - terraform plan
+      - terraform apply --auto-approve
+
+           Click, Create build Project.
+
+NOTE: In Cloudwatch also, under Logs -> Log groups, it would be created as log for collecting all logs - In this case it would as “aws/codebuild/tf-build” , becoz in this case build-project name is - tf-build
+              Make Sure to delete this also after the Demo.
+
+
+3. Now Create - CodePipeline.
+     Pipeline name: terraform-pipeline (any name)
+     Role name: it would be created Automatically
+     Source provider: AWS CodeCommit
+     Repository name: Select the repo name created in step1 as source code
+     Branch name: Select, main
+     Build provider: AWS CodeBuild
+     Project name: Select the Build Project name which we have created in step2, click Next
+     Skip deploy Stage
+     Create Pipeline
+
+
+As soon as this Pipeline runs it will upload state file in s3 backend bucket - which was created in Step1
+It will also create A new Amazon S3 bucket to store default artifact/metadata for the Pipeline which we have created.
+
+Now, create any resource in AWS (either create a new bucket or any resource, just tried to create a s3 bucket, so see s3.tf file, create it) and commit in CodeCommit repository (which is created in step1), now Pipeline will run and will Provision this new S3 bucket.
+
+
+NOTE: Delete all resources after the Demo including Cloudwatch and IAM role/policies.
